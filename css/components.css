@@ -1,0 +1,49 @@
+.card {
+  background: var(--color-card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.5rem;
+  border: 1px solid var(--color-border);
+}
+
+.btn {
+  background-color: var(--color-primary);
+  color: #fff;
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radius);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: background 0.2s;
+}
+
+.btn:hover {
+  background-color: var(--color-primary-dark);
+}
+
+.input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-card);
+  color: var(--color-text);
+  margin-top: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badge-green { background: rgba(16, 185, 129, 0.1); color: var(--color-success); }
+.badge-yellow { background: rgba(245, 158, 11, 0.1); color: var(--color-warning); }
+.badge-red { background: rgba(239, 68, 68, 0.1); color: var(--color-danger); }
+.badge-gray { background: rgba(148, 163, 184, 0.1); color: var(--color-gray); }
