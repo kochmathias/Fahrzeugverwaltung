@@ -1,79 +1,110 @@
-/* Minimalistischer & edler Header */
+/* ==========================================
+   Fahrzeugverwaltung - Component Styles (Mobile First)
+   ========================================== */
+
+/* Ultra-moderner, minimalistischer Header */
 .app-header {
-  background: #1E293B; /* Gleicht sich nahtlos dem App-Hintergrund an */
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  padding: 0.85rem 1.25rem;
+  background: #0F172A;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 0.75rem 1rem;
   width: 100%;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(10px);
 }
 
 .header-content {
   display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 0.6rem;
   max-width: 900px;
   margin: 0 auto;
+}
+
+/* Obere Zeile: Brand & Logout */
+.header-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
 }
 
 .header-brand {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.5rem;
 }
 
 .header-logo {
-  width: 26px;
-  height: 26px;
-  border-radius: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  object-fit: cover;
 }
 
 .app-title {
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 800;
   letter-spacing: -0.03em;
   color: #F8FAFC;
 }
 
-/* Navigations-Pills: Flach, modern & platzsparend */
+/* Untere Zeile: Horizontale, scrollbare Nav-Pills (Kein Umbrechen) */
 .header-nav {
   display: flex;
-  gap: 0.35rem;
-  align-items: center;
+  gap: 0.4rem;
+  overflow-x: auto;
+  white-space: nowrap;
+  padding-bottom: 2px;
+  scrollbar-width: none; /* Firefox */
+}
+
+.header-nav::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, iOS */
 }
 
 .nav-pill {
-  background: transparent;
+  background: rgba(255, 255, 255, 0.04);
   color: #94A3B8;
-  padding: 0.4rem 0.75rem;
-  border-radius: 12px;
-  font-size: 0.8rem;
+  padding: 0.35rem 0.8rem;
+  border-radius: 9999px;
+  font-size: 0.78rem;
   font-weight: 600;
   text-decoration: none;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.04);
   transition: all 0.2s ease;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
 }
 
 .nav-pill:hover {
   color: #F8FAFC;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .nav-pill.active {
   background: #2563EB;
   color: #FFFFFF;
+  border-color: transparent;
   font-weight: 700;
 }
 
 .nav-pill-logout {
+  background: rgba(239, 68, 68, 0.1);
   color: #F87171;
+  border-color: rgba(239, 68, 68, 0.2);
 }
 
 .nav-pill-logout:hover {
-  background: rgba(239, 68, 68, 0.15);
+  background: rgba(239, 68, 68, 0.2);
   color: #EF4444;
 }
 
-/* Modernes Dashboard Layout & Karten */
+/* Edle, moderne Karten */
 .card {
   background: #1E293B;
   border: 1px solid rgba(255, 255, 255, 0.06);
