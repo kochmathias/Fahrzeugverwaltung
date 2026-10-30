@@ -7,32 +7,29 @@ import { checkAuth } from './auth.js';
 
 export async function handleRoute() {
   const container = document.getElementById('app-content');
-  if (!container) {
-    console.error('App-content container nicht gefunden!');
+  if (!container) return;
+
+  const hash = window.location.hash || '#/dashboard';
+  container.innerHTML = `<div style="padding: 3rem; text-align: center; color: #94a3b8; font-size: 0.9rem;">Lade App...</div>`;
+
+  let user = null;
+  try {
+    // Timeout-Schutz: Falls checkAuth nach 3 Sekunden nicht antwortet, geht es trotzdem weiter
+    const authPromise = checkAuth();
+    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Auth-Timeout')), 3000));
+    user = await Promise.race([authPromise, timeoutPromise]);
+  } catch (err) {
+    console.warn('Auth-Hinweis:', err.message);
+  }
+
+  // Wenn kein Benutzer da ist und wir nicht im Login sind -> zum Login umleiten
+  if (!user && hash !== '#/login') {
+    window.location.hash = '#/login';
+    await renderLogin(container);
     return;
   }
 
-  const hash = window.location.hash || '#/dashboard';
-  
-  // Zeige einen kurzen Ladeindikator, damit man sieht, dass etwas passiert
-  container.innerHTML = `<div style="padding: 2rem; text-align: center; color: #94a3b8; font-size: 0.9rem;">Lade...</div>`;
-
   try {
-    let user = null;
-    try {
-      user = await checkAuth();
-    } catch (authErr) {
-      console.warn('Auth check Hinweis:', authErr);
-    }
-
-    // Wenn nicht angemeldet -> Login anzeigen
-    if (!user && hash !== '#/login') {
-      window.location.hash = '#/login';
-      await renderLogin(container);
-      return;
-    }
-
-    // Routing-Weiche
     if (hash === '#/login') {
       await renderLogin(container);
     } else if (hash === '#/dashboard' || hash === '#/') {
@@ -51,12 +48,12 @@ export async function handleRoute() {
       window.location.hash = '#/dashboard';
       await renderDashboard(container);
     }
-  } catch (err) {
-    console.error('Kritischer Routing-Fehler:', err);
+  } catch (renderErr) {
+    console.error('Render-Fehler:', renderErr);
     container.innerHTML = `
       <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; padding: 1.5rem; border-radius: 12px; margin: 1rem; color: #f8fafc;">
-        <h3 style="color: #ef4444; margin-top: 0; font-size: 1.1rem;">Anwendungsfehler</h3>
-        <p style="font-size: 0.85rem; margin-bottom: 0; color: #cbd5e1;">${err.message || String(err)}</p>
+        <h3 style="color: #ef4444; margin-top: 0; font-size: 1.1rem;">Darstellungsfehler</h3>
+        <p style="font-size: 0.85rem; margin-bottom: 0; color: #cbd5e1;">${renderErr.message || String(renderErr)}</p>
       </div>
     `;
   }
