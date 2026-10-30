@@ -16,78 +16,77 @@ export async function renderVehicleForm(container, vehicleId = null) {
     bild_pfad: ''
   };
 
-  container.innerHTML = `<div class="card"><p>Lade Formular...</p></div>`;
+  container.innerHTML = `<div style="padding:1rem;"><p>Lade Formular...</p></div>`;
 
   if (isEdit) {
     const { data, error } = await supabase.from('vehicles').select('*').eq('id', vehicleId).single();
     if (error || !data) {
-      container.innerHTML = `<div class="card"><p style="color:var(--color-danger)">Fahrzeug konnte nicht geladen werden.</p></div>`;
+      container.innerHTML = `<div style="padding:1rem; color:var(--color-danger)">Fahrzeug konnte nicht geladen werden.</div>`;
       return;
     }
     vehicle = data;
   }
 
   container.innerHTML = `
-    <div class="card">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem;">
-        <h2 style="font-size:1.3rem; font-weight:800;">${isEdit ? 'Fahrzeug bearbeiten' : 'Neues Fahrzeug anlegen'}</h2>
-        <a href="#/dashboard" class="btn btn-secondary">Abbrechen</a>
+    <div style="max-width: 600px; margin: 0 auto;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+        <h2 class="form-title" style="margin:0;">${isEdit ? 'Fahrzeug bearbeiten' : 'Neues Fahrzeug'}</h2>
+        <a href="#/dashboard" class="btn btn-secondary" style="padding: 0.5rem 0.9rem; font-size:0.85rem;">Abbrechen</a>
       </div>
 
       <form id="vehicle-form">
         <div class="form-group">
-          <label class="form-label">Bezeichnung (z. B. Privat-PKW oder Firmenbus) *</label>
-          <input type="text" id="bezeichnung" class="input" value="${escapeHtml(vehicle.bezeichnung)}" requiredplaceholder="Mein Audi A4">
+          <label class="form-label">Bezeichnung (z. B. Hauptauto, Zweitwagen) *</label>
+          <input type="text" id="bezeichnung" class="input" value="${escapeHtml(vehicle.bezeichnung)}" required placeholder="z. B. Mein Audi A4">
         </div>
 
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+        <div class="form-row">
           <div class="form-group">
             <label class="form-label">Marke *</label>
             <input type="text" id="marke" class="input" value="${escapeHtml(vehicle.marke)}" required placeholder="Audi">
           </div>
           <div class="form-group">
             <label class="form-label">Modell *</label>
-            <input type="text" id="modell" class="input" value="${escapeHtml(vehicle.modell)}" required placeholder="A4">
+            <input type="text" id="modell" class="input" value="${escapeHtml(vehicle.modell)}" required placeholder="A4 Avant">
           </div>
         </div>
 
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+        <div class="form-row">
           <div class="form-group">
             <label class="form-label">Kennzeichen *</label>
             <input type="text" id="kennzeichen" class="input" value="${escapeHtml(vehicle.kennzeichen)}" required placeholder="G-123AB">
           </div>
           <div class="form-group">
-            <label class="form-label">Kilometerstand (km) *</label>
+            <label class="form-label">Aktueller Kilometerstand *</label>
             <input type="number" id="km_stand" class="input" value="${vehicle.km_stand || 0}" min="0" required>
           </div>
         </div>
 
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+        <div class="form-row">
           <div class="form-group">
             <label class="form-label">Erstzulassung</label>
             <input type="date" id="erstzulassung" class="input" value="${vehicle.erstzulassung || ''}">
           </div>
           <div class="form-group">
-            <label class="form-label">FIN / Fahrgestellnummer</label>
-            <input type="text" id="fin" class="input" value="${escapeHtml(vehicle.fin || '')}">
+            <label class="form-label">FIN (Fahrgestellnummer)</label>
+            <input type="text" id="fin" class="input" value="${escapeHtml(vehicle.fin || '')}" placeholder="Optional">
           </div>
         </div>
 
         <div class="form-group">
-          <label class="form-label">Fahrzeugbild</label>
-          ${vehicle.bild_pfad ? `<img src="${supabase.storage.from('vehicle-images').getPublicUrl(vehicle.bild_pfad).data.publicUrl}" class="img-preview" id="preview">` : `<div id="preview-placeholder" class="img-preview" style="display:flex; align-items:center; justify-content:center; color:var(--color-text-muted);">Kein Bild vorhanden</div>`}
+          <label class="form-label">Fahrzeugfoto hochladen</label>
           <input type="file" id="bild_file" class="input" accept="image/*">
         </div>
 
         <div class="form-group">
           <label class="form-label">Notizen</label>
-          <textarea id="notizen" class="input" rows="3">${escapeHtml(vehicle.notizen || '')}</textarea>
+          <textarea id="notizen" class="input" rows="3" placeholder="Besonderheiten, Zubehör etc.">${escapeHtml(vehicle.notizen || '')}</textarea>
         </div>
 
-        <div style="display:flex; gap:0.75rem; margin-top:1.5rem;">
-          <button type="submit" id="btn-save" class="btn" style="flex:1;">Speichern</button>
+        <div style="margin-top:1.8rem;">
+          <button type="submit" id="btn-save" class="btn" style="width:100%;">Fahrzeug speichern</button>
         </div>
-        <p id="form-error" style="color:var(--color-danger); margin-top:0.75rem; font-weight:600;"></p>
+        <p id="form-error" style="color:var(--color-danger); margin-top:0.75rem; text-align:center; font-weight:600;"></p>
       </form>
     </div>
   `;
@@ -186,7 +185,7 @@ export async function renderVehicleForm(container, vehicleId = null) {
     } catch (err) {
       errElem.textContent = 'Fehler beim Speichern: ' + (err.message || err);
       btn.disabled = false;
-      btn.textContent = 'Speichere...';
+      btn.textContent = 'Fahrzeug speichern';
     }
   });
 }
