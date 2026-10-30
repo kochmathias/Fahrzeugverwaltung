@@ -15,23 +15,37 @@ async function router() {
   const user = await getCurrentUser();
   
   if (!user && hash !== '#/setpassword') {
-    header.style.display = 'none';
+    if (header) header.style.display = 'none';
     renderLogin(container);
     return;
   }
   
-  header.style.display = 'flex';
+  if (header) header.style.display = 'block';
   
-  if (user?.profile?.rolle === 'admin') {
-    document.getElementById('nav-admin').style.display = 'block';
+  const navAdmin = document.getElementById('nav-admin');
+  if (navAdmin) {
+    navAdmin.style.display = user?.profile?.rolle === 'admin' ? 'inline-block' : 'none';
   }
 
+  // Active-State bei Nav-Pills aktualisieren
+  document.querySelectorAll('.nav-pill').forEach(pill => {
+    if (pill.getAttribute('href') === hash) {
+      pill.classList.add('active');
+    } else {
+      pill.classList.remove('active');
+    }
+  });
+
+  // Routen-Zuordnung
   if (hash === '#/dashboard') {
     renderDashboard(container);
-  } else if (hash.startsWith('#/vehicle/new')) {
-    renderVehicleForm(container);
+  } else if (hash === '#/vehicle/new') {
+    renderVehicleForm(container, null);
+  } else if (hash.startsWith('#/vehicle/edit/')) {
+    const id = hash.replace('#/vehicle/edit/', '');
+    renderVehicleForm(container, id);
   } else if (hash.startsWith('#/vehicle/')) {
-    const id = hash.split('/')[2];
+    const id = hash.replace('#/vehicle/', '');
     renderVehicle(container, id);
   } else if (hash === '#/admin') {
     renderAdmin(container);
