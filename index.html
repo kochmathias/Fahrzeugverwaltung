@@ -9,19 +9,22 @@
   <meta name="theme-color" content="#2563EB">
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="css/base.css">
-  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/components.css?v=7">
 </head>
 <body>
-  <!-- Header im cleanen Mobile-First Design -->
+  <!-- Header: Titel oben, Menüpunkte darunter -->
   <header id="app-header" class="app-header" style="display:none;">
     <div class="header-content">
-      <div class="header-top">
+      <!-- Top Row: Logo/Titel & Logout -->
+      <div class="header-top-row">
         <div class="header-brand">
           <img src="icons/icon-192.png" alt="Logo" class="header-logo" onerror="this.style.display='none'">
           <span class="app-title">Fahrzeugverwaltung</span>
         </div>
         <button id="btn-logout" class="nav-pill nav-pill-logout">Abmelden</button>
       </div>
+
+      <!-- Bottom Row: Navigation direkt darunter -->
       <nav class="header-nav">
         <a href="#/dashboard" class="nav-pill active">Dashboard</a>
         <a href="#/admin" id="nav-admin" class="nav-pill" style="display: none;">Admin</a>
@@ -34,6 +37,6 @@
     <!-- Dynamischer Inhalt -->
   </main>
 
-  <script type="module" src="js/router.js?v=6"></script>
+  <script type="module" src="js/router.js?v=7"></script>
 </body>
 </html>
