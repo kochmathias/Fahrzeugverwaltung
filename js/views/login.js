@@ -48,7 +48,9 @@ export function renderLogin(container) {
 
       try {
         await loginUser(u, p);
-        window.location.hash = '#/dashboard';
+        // Nach erfolgreichem Login direkt neu laden, damit die Session greift
+        window.location.href = './index.html#/dashboard';
+        window.location.reload();
       } catch (err) {
         console.error('Login-Fehler:', err);
         let msg = err.message || 'Anmeldung fehlgeschlagen';
