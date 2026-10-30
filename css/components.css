@@ -121,7 +121,7 @@
   transform: translateY(-1px);
 }
 
-/* Formulareingaben (Perfekt auf 100% Breite & ohne iOS-Verzerrungen) */
+/* Formulareingaben (Perfekt auf 100% Breite & einheitliche iOS-Höhen) */
 .form-group {
   margin-bottom: 1.15rem;
   width: 100%;
@@ -147,9 +147,17 @@
   color: #F8FAFC !important;
   font-size: 0.95rem !important;
   outline: none !important;
+  min-height: 48px !important; /* Fixiert die Höhe speziell für Datum-Inputs auf iOS */
+  line-height: 1.2 !important;
+  -webkit-appearance: none !important;
   -webkit-text-fill-color: #F8FAFC !important;
   box-sizing: border-box !important;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+input[type="date"]::-webkit-date-and-time-value {
+  text-align: left;
+  min-height: 1.2em;
 }
 
 .input:focus, select:focus, textarea:focus, input:focus {
@@ -163,9 +171,23 @@ input[type="file"] {
   background-color: #0b1120 !important;
   border: 1px solid var(--color-border, #334155) !important;
   border-radius: 14px !important;
-  padding: 0.6rem !important;
-  color: #F8FAFC !important;
+  padding: 0.65rem 0.8rem !important;
+  color: #94A3B8 !important;
   font-size: 0.85rem !important;
+  min-height: 48px !important;
+  box-sizing: border-box !important;
+}
+
+input[type="file"]::file-selector-button {
+  background: #2563EB;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 8px;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-right: 0.75rem;
+  cursor: pointer;
 }
 
 /* KPI-Grid */
