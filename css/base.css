@@ -1,9 +1,8 @@
 :root {
-  --color-primary: #2563EB;
+  --color-primary: #2563EB; /* Kräftiges, modernes Blau */
   --color-primary-hover: #1D4ED8;
   --color-bg: #0F172A;
   --color-card: #1E293B;
-  --color-card-hover: #273548;
   --color-text: #F8FAFC;
   --color-text-muted: #94A3B8;
   --color-border: #334155;
