@@ -51,10 +51,6 @@ export async function renderVehicle(container, id) {
       }
     }
 
-    const { data: monitorTypes } = await supabase
-      .from('monitor_types')
-      .select('*');
-
     const imgUrl = vehicle.bild_pfad 
       ? supabase.storage.from('vehicle-images').getPublicUrl(vehicle.bild_pfad).data.publicUrl 
       : null;
@@ -104,12 +100,12 @@ export async function renderVehicle(container, id) {
       <!-- Fristen & Überprüfungen Header -->
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
         <h3 style="font-size: 1.1rem; font-weight: 800; margin: 0;">Fristen & Überprüfungen</h3>
-        <button id="btn-open-custom-monitor" class="btn" style="padding: 0.4rem 0.9rem !important; font-size: 0.8rem !important;">+ Eigene Frist</button>
+        <button id="btn-open-custom-monitor" class="btn" style="padding: 0.4rem 0.9rem !important; font-size: 0.8rem !important;">+ Neue Frist</button>
       </div>
 
-      <!-- Modal für neue / flexible Frist anlegen -->
+      <!-- Modal für neue Frist anlegen -->
       <div id="custom-monitor-card" class="card" style="display: none; border-color: var(--color-primary); margin-bottom: 1rem;">
-        <h4 style="margin: 0 0 0.8rem 0; font-size: 1rem; font-weight: 750;">Neue flexible Frist anlegen</h4>
+        <h4 style="margin: 0 0 0.8rem 0; font-size: 1rem; font-weight: 750;">Neue Frist anlegen</h4>
         <form id="custom-monitor-form">
           <div class="form-group">
             <label class="form-label">Bezeichnung der Frist</label>
@@ -174,7 +170,7 @@ export async function renderVehicle(container, id) {
         </form>
       </div>
 
-      <!-- Liste der Fristen mit Text-Button "Verlängerung eintragen" -->
+      <!-- Liste der Fristen mit Lösch-Button für jede Frist -->
       ${(!monitors || monitors.length === 0) ? `
         <div class="card" style="text-align: center; padding: 1.5rem 1rem;">
           <p style="color: var(--color-text-muted); margin: 0; font-size: 0.85rem;">Keine Fristen konfiguriert.</p>
@@ -199,12 +195,13 @@ export async function renderVehicle(container, id) {
                     <h4 style="font-size: 0.95rem; font-weight: 800; margin: 0 0 0.2rem 0;">${escapeHtml(typeName)}</h4>
                     <p style="color: var(--color-text-muted); font-size: 0.8rem; margin: 0;">Gültig bis: <strong>${datumFormatted}</strong></p>
                   </div>
-                  <div style="display: flex; align-items: center; gap: 0.75rem;">
+                  <div style="display: flex; align-items: center; gap: 0.5rem;">
                     <span style="background: ${badgeBg}; color: #fff; font-size: 0.7rem; font-weight: 700; padding: 0.25rem 0.6rem; border-radius: 9999px; text-transform: uppercase;">${statusText}</span>
+                    <button type="button" class="btn-delete-main-monitor" data-id="${m.id}" data-typename="${escapeHtml(typeName)}" style="background: transparent; border: none; color: var(--color-danger); cursor: pointer; font-size: 1.1rem; font-weight: 700; padding: 0.2rem 0.4rem;" title="Diese Frist komplett löschen">×</button>
                   </div>
                 </div>
 
-                <!-- Text-Button statt Stift -->
+                <!-- Text-Button zum Verlängern -->
                 <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--color-border);">
                   <button type="button" class="monitor-edit-btn nav-pill" data-id="${m.id}" data-typename="${escapeHtml(typeName)}" data-date="${m.ablaufdatum || ''}" data-vorlauf="${m.vorlauf_tage || 30}" style="background: rgba(37,99,235,0.2); color: #93c5fd; font-size: 0.75rem; padding: 0.3rem 0.75rem;">
                     + Verlängerung eintragen
@@ -250,7 +247,7 @@ export async function renderVehicle(container, id) {
     const vignetteContainer = document.getElementById('vignette-transfer-container');
     const targetVehicleSelect = document.getElementById('target-vehicle-id');
 
-    // Eigene Frist anlegen öffnen/schließen
+    // Neue Frist anlegen
     document.getElementById('btn-open-custom-monitor').onclick = () => {
       customCard.style.display = customCard.style.display === 'none' ? 'block' : 'none';
       modalCard.style.display = 'none';
@@ -259,7 +256,6 @@ export async function renderVehicle(container, id) {
       customCard.style.display = 'none';
     };
 
-    // Eigene Frist abspeichern
     document.getElementById('custom-monitor-form').onsubmit = async (e) => {
       e.preventDefault();
       const customName = document.getElementById('custom-mon-name').value.trim();
@@ -280,7 +276,7 @@ export async function renderVehicle(container, id) {
       }
     };
 
-    // Klick auf "Verlängerung eintragen"
+    // Verlängerung eintragen
     document.querySelectorAll('.monitor-edit-btn').forEach(btn => {
       btn.onclick = () => {
         const tName = btn.getAttribute('data-typename');
@@ -292,7 +288,6 @@ export async function renderVehicle(container, id) {
         monKmInput.value = vehicle.km_stand || 0;
         monHistoryNotiz.value = '';
         
-        // Wenn es sich um eine Vignette handelt, Transfer-Option anzeigen
         if (tName.toLowerCase().includes('vignette')) {
           vignetteContainer.style.display = 'block';
         } else {
@@ -309,7 +304,6 @@ export async function renderVehicle(container, id) {
       modalCard.style.display = 'none';
     };
 
-    // Frist speichern, Verlängerung loggen & ggf. Vignette auf anderes Fahrzeug übertragen
     document.getElementById('monitor-form').onsubmit = async (e) => {
       e.preventDefault();
       const mId = editMonId.value;
@@ -321,10 +315,8 @@ export async function renderVehicle(container, id) {
       const targetVehId = targetVehicleSelect ? targetVehicleSelect.value : '';
 
       try {
-        // 1. Kilometerstand im Fahrzeug aktualisieren
         await supabase.from('vehicles').update({ km_stand: neuerKm }).eq('id', id);
 
-        // 2. Historie-Eintrag loggen
         await supabase.from('monitor_history').insert({
           monitor_id: mId,
           neues_ablaufdatum: neuesDatum,
@@ -332,15 +324,12 @@ export async function renderVehicle(container, id) {
           notiz: notiz || 'Verlängerung eingetragen'
         });
 
-        // 3. Frist aktualisieren
         await supabase.from('monitors').update({
           ablaufdatum: neuesDatum,
           vorlauf_tage: vorlauf
         }).eq('id', mId);
 
-        // 4. Falls Vignette auf anderes Fahrzeug übertragen werden soll
         if (targetVehId && tName.toLowerCase().includes('vignette')) {
-          // Prüfen ob das Ziel-Fahrzeug bereits einen Vignetten-Monitor hat
           const { data: targetMon } = await supabase
             .from('monitors')
             .select('id')
@@ -360,6 +349,25 @@ export async function renderVehicle(container, id) {
         alert('Fehler beim Speichern: ' + err.message);
       }
     };
+
+    // Haupt-Frist komplett löschen (egal ob fix oder benutzerdefiniert)
+    document.querySelectorAll('.btn-delete-main-monitor').forEach(btn => {
+      btn.onclick = async (e) => {
+        e.stopPropagation();
+        const tName = btn.getAttribute('data-typename');
+        if (confirm(`Möchten Sie die Frist "${tName}" und deren kompletten Verlauf wirklich löschen?`)) {
+          const monId = btn.getAttribute('data-id');
+          try {
+            await supabase.from('monitor_history').delete().eq('monitor_id', monId);
+            const { error: delMonErr } = await supabase.from('monitors').delete().eq('id', monId);
+            if (delMonErr) throw delMonErr;
+            renderVehicle(container, id);
+          } catch (err) {
+            alert('Fehler beim Löschen der Frist: ' + err.message);
+          }
+        }
+      };
+    });
 
     // Historie-Log löschen
     document.querySelectorAll('.btn-delete-hist').forEach(btn => {
