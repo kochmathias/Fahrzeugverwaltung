@@ -1,43 +1,30 @@
 import { supabase } from './supabase.js';
 
-export async function getCurrentUser() {
+export async function checkAuth() {
   try {
     const { data: { session }, error } = await supabase.auth.getSession();
-    if (error || !session) return null;
-    
-    const user = session.user;
-    
-    // Profil sicher und fehlerfrei laden
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .maybeSingle();
-      
-    return { ...user, profile: profile || { rolle: 'user' } };
+    if (error) {
+      console.warn('Auth Session Fehler:', error);
+      return null;
+    }
+    return session ? session.user : null;
   } catch (err) {
-    console.warn('Fehler in getCurrentUser:', err);
+    console.error('Fehler in checkAuth:', err);
     return null;
   }
 }
 
-export async function loginUser(identifier, password) {
-  let email = identifier.trim();
-  
-  if (!email.includes('@')) {
-    email = `${email.toLowerCase()}@kfz-at-user.local`;
-  }
-  
+export async function login(email, password) {
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
-    password
+    password,
   });
-  
   if (error) throw error;
   return data;
 }
 
-export async function logoutUser() {
-  await supabase.auth.signOut();
-  window.location.reload();
+export async function logout() {
+  const { error } = await supabase.auth.signOut();
+  if (error) throw error;
+  window.location.hash = '#/login';
 }
