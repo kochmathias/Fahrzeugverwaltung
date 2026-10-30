@@ -1,168 +1,139 @@
-/* ==========================================
-   Fahrzeugverwaltung - Component Styles (Mobile First)
-   ========================================== */
-
-/* Ultra-moderner, minimalistischer Header */
+/* Header mit blauem Verlauf und integrierten Nav-Pills */
 .app-header {
-  background: #0F172A;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+  color: #fff;
+  padding: 1.25rem 1rem;
   width: 100%;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
 .header-content {
   display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  max-width: 900px;
-  margin: 0 auto;
-}
-
-/* Obere Zeile: Brand & Logout */
-.header-top-row {
-  display: flex;
   justify-content: space-between;
   align-items: center;
-  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  gap: 1rem;
 }
 
 .header-brand {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 .header-logo {
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   object-fit: cover;
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .app-title {
-  font-size: 1rem;
+  font-size: 1.25rem;
   font-weight: 800;
-  letter-spacing: -0.03em;
-  color: #F8FAFC;
+  letter-spacing: -0.02em;
+  color: #fff;
+  line-height: 1.1;
 }
 
-/* Untere Zeile: Horizontale, scrollbare Nav-Pills (Kein Umbrechen) */
+/* Nav-Pills direkt im Header */
 .header-nav {
   display: flex;
   gap: 0.4rem;
+  align-items: center;
   overflow-x: auto;
-  white-space: nowrap;
-  padding-bottom: 2px;
-  scrollbar-width: none; /* Firefox */
+  scrollbar-width: none;
 }
 
 .header-nav::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, iOS */
+  display: none;
 }
 
 .nav-pill {
-  background: rgba(255, 255, 255, 0.04);
-  color: #94A3B8;
-  padding: 0.35rem 0.8rem;
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  padding: 0.4rem 0.85rem;
   border-radius: 9999px;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 600;
   text-decoration: none;
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  border: none;
   cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
 }
 
 .nav-pill:hover {
-  color: #F8FAFC;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .nav-pill.active {
-  background: #2563EB;
-  color: #FFFFFF;
-  border-color: transparent;
+  background: #fff;
+  color: #2563EB;
   font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .nav-pill-logout {
-  background: rgba(239, 68, 68, 0.1);
+  background: rgba(239, 68, 68, 0.25);
   color: #F87171;
-  border-color: rgba(239, 68, 68, 0.2);
 }
 
 .nav-pill-logout:hover {
-  background: rgba(239, 68, 68, 0.2);
-  color: #EF4444;
+  background: rgba(239, 68, 68, 0.4);
 }
 
-/* Edle, moderne Karten */
+/* Karten & Dashboard-Kacheln */
 .card {
-  background: #1E293B;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
   border-radius: 20px;
   padding: 1.25rem;
   margin-bottom: 1rem;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25);
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
 }
 
-.card:hover {
-  border-color: rgba(37, 99, 235, 0.3);
-}
-
-/* Elegante, abgerundete Buttons */
+/* Buttons */
 .btn, a.btn {
-  background-color: #2563EB;
+  background-color: var(--color-primary);
   color: #ffffff !important;
   border: none;
   border-radius: 14px;
   padding: 0.65rem 1.25rem;
   font-size: 0.85rem;
   font-weight: 700;
-  letter-spacing: -0.01em;
   cursor: pointer;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
   transition: all 0.2s ease;
 }
 
 .btn:hover, a.btn:hover {
-  background-color: #1D4ED8;
+  background-color: var(--color-primary-hover);
   transform: translateY(-1px);
 }
 
-.btn:active {
-  transform: translateY(0);
-}
-
-/* Clean Formular-Felder */
+/* Clean Formularfeld-Optik */
 .input, select, textarea {
   width: 100%;
   background-color: #0F172A;
-  border: 1px solid #334155;
+  border: 1px solid var(--color-border);
   border-radius: 14px;
   padding: 0.8rem 1rem;
-  color: #F8FAFC;
+  color: var(--color-text);
   font-size: 0.95rem;
   outline: none;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .input:focus, select:focus, textarea:focus {
-  border-color: #2563EB;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
 }
 
 .form-group {
@@ -173,7 +144,7 @@
   display: block;
   font-size: 0.78rem;
   font-weight: 700;
-  color: #94A3B8;
+  color: var(--color-text-muted);
   margin-bottom: 0.4rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
