@@ -1,21 +1,38 @@
 import { supabase } from './supabase.js';
-import { pseudoEmail } from './utils.js';
+
+export async function getCurrentUser() {
+  const { data: { session }, error } = await supabase.auth.getSession();
+  if (error || !session) return null;
+  
+  const user = session.user;
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single();
+    
+  return { ...user, profile };
+}
 
 export async function loginUser(identifier, password) {
-  const email = identifier.includes('@') ? identifier : pseudoEmail(identifier);
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  let email = identifier.trim();
+  
+  // Wenn kein "@" enthalten ist, hängen wir das interne Suffix für Benutzernamen an
+  if (!email.includes('@')) {
+    email = `${email.toLowerCase()}@kfz-at-user.local`;
+  }
+  
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password
+  });
+  
   if (error) throw error;
   return data;
 }
 
 export async function logoutUser() {
-  await supabase.auth.signOut();
-  window.location.hash = '#/login';
-}
-
-export async function getCurrentUser() {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) return null;
-  const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
-  return { ...session.user, profile };
+  const { error } = await supabase.auth.signOut();
+  if (error) throw error;
+  window.location.reload();
 }
