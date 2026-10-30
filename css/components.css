@@ -1,26 +1,32 @@
-/* Header im einzeiligen Reise-App-Stil */
+/* Exakter zweizeiliger Header */
 .app-header {
   background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
   color: #fff;
-  padding: 0.85rem 1rem;
+  padding: 0.85rem 1rem 0.75rem 1rem;
   width: 100%;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
 .header-content {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 0.65rem;
   max-width: 900px;
   margin: 0 auto;
-  gap: 0.75rem;
+}
+
+/* Obere Zeile: Branding & Logout */
+.header-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
 }
 
 .header-brand {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  flex-shrink: 0;
+  gap: 0.6rem;
 }
 
 .header-logo {
@@ -32,31 +38,26 @@
 }
 
 .app-title {
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-weight: 800;
   letter-spacing: -0.02em;
   color: #fff;
 }
 
+/* Untere Zeile: Menüpunkte direkt darunter */
 .header-nav {
   display: flex;
-  gap: 0.35rem;
+  gap: 0.4rem;
   align-items: center;
-  overflow-x: auto;
-  scrollbar-width: none;
-  white-space: nowrap;
-}
-
-.header-nav::-webkit-scrollbar {
-  display: none;
+  flex-wrap: wrap;
 }
 
 .nav-pill {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.18);
   color: #fff;
-  padding: 0.35rem 0.75rem;
+  padding: 0.35rem 0.8rem;
   border-radius: 9999px;
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   font-weight: 600;
   text-decoration: none;
   border: none;
@@ -78,14 +79,16 @@
 
 .nav-pill-logout {
   background: rgba(239, 68, 68, 0.3);
-  color: #F87171;
+  color: #FFFFFF;
+  font-size: 0.75rem;
+  padding: 0.35rem 0.8rem;
 }
 
 .nav-pill-logout:hover {
   background: rgba(239, 68, 68, 0.5);
 }
 
-/* Karten im minimalistischen Look */
+/* Karten & Buttons */
 .card {
   background: var(--color-card, #1E293B);
   border: 1px solid var(--color-border, #334155);
@@ -95,7 +98,6 @@
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
 }
 
-/* Buttons */
 .btn, a.btn {
   background-color: #2563EB !important;
   color: #FFFFFF !important;
@@ -118,57 +120,17 @@
   transform: translateY(-1px);
 }
 
-/* Perfekt lesbare Formulareingaben ohne iOS-Farbüberlagerung */
-.input, select, textarea {
-  width: 100%;
-  background-color: #0b1120 !important;
-  border: 1px solid var(--color-border, #334155);
-  border-radius: 14px;
-  padding: 0.8rem 1rem;
-  color: #F8FAFC !important;
-  font-size: 0.95rem;
-  outline: none;
-  -webkit-text-fill-color: #F8FAFC !important;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.input:-webkit-autofill,
-.input:-webkit-autofill:hover, 
-.input:-webkit-autofill:focus {
-  -webkit-box-shadow: 0 0 0px 1000px #0b1120 inset !important;
-  -webkit-text-fill-color: #F8FAFC !important;
-}
-
-.input:focus, select:focus, textarea:focus {
-  border-color: #2563EB;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
-}
-
-.form-group {
-  margin-bottom: 1.2rem;
-}
-
-.form-label {
-  display: block;
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: var(--color-text-muted, #94A3B8);
-  margin-bottom: 0.4rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-/* KPI-Kacheln Grid (Mit etwas mehr Abstand, damit "In Ordnung" perfekt sitzt) */
+/* KPI-Grid: Perfekt optimiert, damit kein Text mehr anbricht */
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.5rem;
+  gap: 0.35rem;
   margin-bottom: 1.25rem;
   width: 100%;
 }
 
 .kpi-card {
-  padding: 0.7rem 0.15rem !important;
+  padding: 0.65rem 0.1rem !important;
   text-align: center;
   margin-bottom: 0;
   display: flex;
@@ -178,17 +140,17 @@
 }
 
 .kpi-value {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   font-weight: 800;
   line-height: 1.2;
 }
 
 .kpi-label {
-  font-size: 0.55rem;
+  font-size: 0.5rem; /* Kompaktere Schrift, damit "In Ordnung" perfekt passt */
   color: var(--color-text-muted, #94A3B8);
   text-transform: uppercase;
   font-weight: 700;
   margin-top: 0.2rem;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
   white-space: nowrap;
 }
