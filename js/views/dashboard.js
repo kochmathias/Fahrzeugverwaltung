@@ -22,7 +22,9 @@ export async function renderDashboard(container) {
     let totalGelb = 0;
     let totalGuenst = 0;
 
+    let vehicleStatusMap = {};
     let monitorsMap = {};
+
     try {
       const { data: monitors } = await supabase.from('monitors').select('*, monitor_types(*)');
       if (monitors) {
@@ -33,9 +35,20 @@ export async function renderDashboard(container) {
           const v = vehicles.find(veh => veh.id === m.vehicle_id);
           const km = v ? v.km_stand : 0;
           const status = berechneAmpel(m.ablaufdatum, m.vorlauf_tage, km, m.naechste_faellig_km);
+          
           if (status === 'red') totalRot++;
           else if (status === 'yellow') totalGelb++;
           else if (status === 'green') totalGuenst++;
+
+          // Schlechtesten Status für das Fahrzeug ermitteln (red > yellow > green)
+          const currentWorst = vehicleStatusMap[m.vehicle_id];
+          if (status === 'red') {
+            vehicleStatusMap[m.vehicle_id] = 'red';
+          } else if (status === 'yellow' && currentWorst !== 'red') {
+            vehicleStatusMap[m.vehicle_id] = 'yellow';
+          } else if (status === 'green' && !currentWorst) {
+            vehicleStatusMap[m.vehicle_id] = 'green';
+          }
         });
       }
     } catch (e) {
@@ -43,7 +56,7 @@ export async function renderDashboard(container) {
     }
 
     container.innerHTML = `
-      <!-- KPI Summary Bar (Zentriert & optimal aufgeteilt) -->
+      <!-- KPI Summary Bar -->
       <div class="kpi-grid">
         <div class="card kpi-card">
           <div class="kpi-value">${(vehicles || []).length}</div>
@@ -80,8 +93,14 @@ export async function renderDashboard(container) {
               ? supabase.storage.from('vehicle-images').getPublicUrl(v.bild_pfad).data.publicUrl 
               : null;
 
+            const worstStatus = vehicleStatusMap[v.id];
+            let borderColor = 'var(--color-border)';
+            if (worstStatus === 'red') borderColor = 'var(--color-danger)';
+            else if (worstStatus === 'yellow') borderColor = 'var(--color-warning)';
+            else if (worstStatus === 'green') borderColor = 'var(--color-success)';
+
             return `
-              <div class="card" style="cursor: pointer; margin-bottom: 0.75rem; display: flex; gap: 1rem; align-items: center;" onclick="window.location.hash='#/vehicle/${escapeHtml(v.id)}'">
+              <div class="card" style="cursor: pointer; margin-bottom: 0.75rem; display: flex; gap: 1rem; align-items: center; border-left: 5px solid ${borderColor};" onclick="window.location.hash='#/vehicle/${escapeHtml(v.id)}'">
                 ${imgUrl 
                   ? `<img src="${imgUrl}" style="width:70px; height:70px; border-radius:12px; object-fit:cover; flex-shrink:0;">` 
                   : `<div style="width:70px; height:70px; border-radius:12px; background:var(--color-bg); display:flex; align-items:center; justify-content:center; color:var(--color-text-muted); font-size:0.75rem; font-weight:700; flex-shrink:0;">KFZ</div>`}
