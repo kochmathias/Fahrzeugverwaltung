@@ -6,14 +6,13 @@ export async function renderVehicle(container, id) {
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem;">
       <a href="#/dashboard" class="nav-pill" style="background: rgba(255,255,255,0.1); text-decoration: none;">← Zurück</a>
       <div style="display: flex; gap: 0.5rem;">
-        <a href="#/vehicle/${escapeHtml(id)}/edit" class="nav-pill" style="background: #2563EB; text-decoration: none;">Bearbeiten</a>
+        <a href="#/vehicle/edit/${escapeHtml(id)}" class="btn" style="padding: 0.4rem 0.9rem !important; font-size: 0.8rem !important;">Bearbeiten</a>
       </div>
     </div>
     <div class="card"><p style="color: var(--color-text-muted); text-align:center;">Lade Fahrzeugdetails...</p></div>
   `;
 
   try {
-    // 1. Fahrzeugdaten laden
     const { data: vehicle, error: vehError } = await supabase
       .from('vehicles')
       .select('*')
@@ -22,7 +21,6 @@ export async function renderVehicle(container, id) {
 
     if (vehError) throw vehError;
 
-    // 2. Überprüfungen / Monitore für dieses Fahrzeug laden
     const { data: monitors, error: monError } = await supabase
       .from('monitors')
       .select('*, monitor_types(*)')
@@ -30,7 +28,6 @@ export async function renderVehicle(container, id) {
 
     if (monError) console.warn('Monitore konnten nicht geladen werden:', monError);
 
-    // 3. Verfügbare Monitor-Typen für das "Neue Frist hinzufügen"-Dropdown laden
     const { data: monitorTypes } = await supabase
       .from('monitor_types')
       .select('*');
@@ -60,7 +57,7 @@ export async function renderVehicle(container, id) {
         </div>
       </div>
 
-      <!-- Fahrzeugstammdaten Details -->
+      <!-- Stammdaten -->
       <div class="card" style="margin-bottom: 1.25rem;">
         <h3 style="font-size: 0.95rem; font-weight: 700; text-transform: uppercase; color: var(--color-text-muted); margin-bottom: 0.8rem; letter-spacing: 0.04em;">Stammdaten</h3>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; font-size: 0.9rem;">
@@ -81,16 +78,17 @@ export async function renderVehicle(container, id) {
         ` : ''}
       </div>
 
-      <!-- Fristen & Überprüfungen (§57a, Vignette etc.) -->
+      <!-- Fristen & Überprüfungen -->
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
         <h3 style="font-size: 1.1rem; font-weight: 800; margin: 0;">Fristen & Überprüfungen</h3>
-        <button id="btn-open-add-monitor" class="btn" style="padding: 0.4rem 0.9rem !important; font-size: 0.8rem !important;">+ Frist hinzufügen</button>
+        <button id="btn-open-add-monitor" class="btn" style="padding: 0.4rem 0.9rem !important; font-size: 0.8rem !important;">+ Frist</button>
       </div>
 
-      <!-- Modal / Formular zum Hinzufügen einer Frist (versteckt per Default) -->
-      <div id="add-monitor-card" class="card" style="display: none; border-color: var(--color-primary); margin-bottom: 1rem;">
-        <h4 style="margin: 0 0 0.8rem 0; font-size: 1rem; font-weight: 750;">Neue Frist / Überprüfung anlegen</h4>
+      <!-- Modal zum Bearbeiten / Hinzufügen einer Frist -->
+      <div id="monitor-modal-card" class="card" style="display: none; border-color: var(--color-primary); margin-bottom: 1rem;">
+        <h4 id="monitor-modal-title" style="margin: 0 0 0.8rem 0; font-size: 1rem; font-weight: 750;">Frist bearbeiten</h4>
         <form id="monitor-form">
+          <input type="hidden" id="edit-mon-id">
           <div class="form-group">
             <label class="form-label">Art der Frist</label>
             <select id="mon-type" class="input" required>
@@ -113,10 +111,10 @@ export async function renderVehicle(container, id) {
         </form>
       </div>
 
-      <!-- Liste der vorhandenen Fristen -->
+      <!-- Liste der Fristen (klickbar zum Bearbeiten) -->
       ${(!monitors || monitors.length === 0) ? `
         <div class="card" style="text-align: center; padding: 1.5rem 1rem;">
-          <p style="color: var(--color-text-muted); margin: 0; font-size: 0.85rem;">Noch keine Fristen (wie §57a oder Vignette) hinterlegt.</p>
+          <p style="color: var(--color-text-muted); margin: 0; font-size: 0.85rem;">Noch keine Fristen hinterlegt.</p>
         </div>
       ` : `
         <div style="display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1.5rem;">
@@ -124,26 +122,21 @@ export async function renderVehicle(container, id) {
             const status = berechneAmpel(m.ablaufdatum, m.vorlauf_tage, vehicle.km_stand, m.naechste_faellig_km);
             let badgeBg = 'var(--color-success)';
             let statusText = 'Gut';
-            if (status === 'red') {
-              badgeBg = 'var(--color-danger)';
-              statusText = 'Überfällig';
-            } else if (status === 'yellow') {
-              badgeBg = 'var(--color-warning)';
-              statusText = 'Bald fällig';
-            }
+            if (status === 'red') { badgeBg = 'var(--color-danger)'; statusText = 'Überfällig'; }
+            else if (status === 'yellow') { badgeBg = 'var(--color-warning)'; statusText = 'Bald fällig'; }
 
             const typeName = m.monitor_types ? m.monitor_types.name : 'Überprüfung';
             const datumFormatted = m.ablaufdatum ? new Date(m.ablaufdatum).toLocaleDateString('de-AT') : 'Kein Datum';
 
             return `
-              <div class="card" style="margin-bottom: 0; display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem;">
+              <div class="card monitor-item" data-id="${m.id}" data-typeid="${m.monitor_type_id}" data-date="${m.ablaufdatum || ''}" data-vorlauf="${m.vorlauf_tage || 30}" style="cursor: pointer; margin-bottom: 0; display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; transition: border-color 0.2s;">
                 <div>
                   <h4 style="font-size: 0.95rem; font-weight: 800; margin: 0 0 0.2rem 0;">${escapeHtml(typeName)}</h4>
                   <p style="color: var(--color-text-muted); font-size: 0.8rem; margin: 0;">Gültig bis: <strong>${datumFormatted}</strong></p>
                 </div>
                 <div style="display: flex; align-items: center; gap: 0.75rem;">
                   <span style="background: ${badgeBg}; color: #fff; font-size: 0.7rem; font-weight: 700; padding: 0.25rem 0.6rem; border-radius: 9999px; text-transform: uppercase;">${statusText}</span>
-                  <button class="btn-delete-mon" data-id="${m.id}" style="background: transparent; border: none; color: var(--color-danger); cursor: pointer; font-size: 1rem; padding: 0.2rem;">×</button>
+                  <button type="button" class="btn-delete-mon" data-id="${m.id}" style="background: transparent; border: none; color: var(--color-danger); cursor: pointer; font-size: 1.1rem; padding: 0.2rem;">×</button>
                 </div>
               </div>
             `;
@@ -157,39 +150,77 @@ export async function renderVehicle(container, id) {
       </div>
     `;
 
-    // Event-Listener für das Öffnen/Schließen des Frist-Formulars
-    const addCard = document.getElementById('add-monitor-card');
+    const modalCard = document.getElementById('monitor-modal-card');
+    const modalTitle = document.getElementById('monitor-modal-title');
+    const editMonId = document.getElementById('edit-mon-id');
+    const monTypeSelect = document.getElementById('mon-type');
+    const monDateInput = document.getElementById('mon-date');
+    const monVorlaufInput = document.getElementById('mon-vorlauf');
+
+    // Öffnen für neue Frist
     document.getElementById('btn-open-add-monitor').onclick = () => {
-      addCard.style.display = addCard.style.display === 'none' ? 'block' : 'none';
-    };
-    document.getElementById('btn-cancel-monitor').onclick = () => {
-      addCard.style.display = 'none';
+      editMonId.value = '';
+      monTypeSelect.value = '';
+      monDateInput.value = '';
+      monVorlaufInput.value = '30';
+      modalTitle.textContent = 'Frist hinzufügen';
+      modalCard.style.display = 'block';
     };
 
-    // Frist speichern Handler
+    // Klick auf eine bestehende Frist zum Bearbeiten/Datum eintragen
+    document.querySelectorAll('.monitor-item').forEach(item => {
+      item.onclick = (e) => {
+        if (e.target.classList.contains('btn-delete-mon')) return; // Lösch-Button ignorieren
+        editMonId.value = item.getAttribute('data-id');
+        monTypeSelect.value = item.getAttribute('data-typeid');
+        monDateInput.value = item.getAttribute('data-date');
+        monVorlaufInput.value = item.getAttribute('data-vorlauf');
+        modalTitle.textContent = 'Frist / Ablaufdatum bearbeiten';
+        modalCard.style.display = 'block';
+      };
+    });
+
+    document.getElementById('btn-cancel-monitor').onclick = () => {
+      modalCard.style.display = 'none';
+    };
+
+    // Frist speichern (Update oder Insert)
     document.getElementById('monitor-form').onsubmit = async (e) => {
       e.preventDefault();
-      const typeId = document.getElementById('mon-type').value;
-      const ablaufdatum = document.getElementById('mon-date').value;
-      const vorlauf = parseInt(document.getElementById('mon-vorlauf').value) || 30;
+      const mId = editMonId.value;
+      const typeId = monTypeSelect.value;
+      const ablaufdatum = monDateInput.value;
+      const vorlauf = parseInt(monVorlaufInput.value) || 30;
 
       try {
-        const { error: insErr } = await supabase.from('monitors').insert({
-          vehicle_id: id,
-          monitor_type_id: typeId,
-          ablaufdatum: ablaufdatum,
-          vorlauf_tage: vorlauf
-        });
-        if (insErr) throw insErr;
-        renderVehicle(container, id); // Ansicht neu laden
+        if (mId) {
+          // Update bestehender Frist
+          const { error: upErr } = await supabase.from('monitors').update({
+            monitor_type_id: typeId,
+            ablaufdatum: ablaufdatum,
+            vorlauf_tage: vorlauf
+          }).eq('id', mId);
+          if (upErr) throw upErr;
+        } else {
+          // Neue Frist einfügen
+          const { error: insErr } = await supabase.from('monitors').insert({
+            vehicle_id: id,
+            monitor_type_id: typeId,
+            ablaufdatum: ablaufdatum,
+            vorlauf_tage: vorlauf
+          });
+          if (insErr) throw insErr;
+        }
+        renderVehicle(container, id);
       } catch (err) {
         alert('Fehler beim Speichern der Frist: ' + err.message);
       }
     };
 
-    // Frist löschen Handler
+    // Frist löschen
     document.querySelectorAll('.btn-delete-mon').forEach(btn => {
-      btn.onclick = async () => {
+      btn.onclick = async (e) => {
+        e.stopPropagation();
         if (confirm('Möchten Sie diese Frist wirklich löschen?')) {
           const monId = btn.getAttribute('data-id');
           await supabase.from('monitors').delete().eq('id', monId);
@@ -198,7 +229,7 @@ export async function renderVehicle(container, id) {
       };
     });
 
-    // Fahrzeug löschen Handler
+    // Fahrzeug löschen
     document.getElementById('btn-delete-vehicle').onclick = async () => {
       if (confirm('Möchten Sie dieses Fahrzeug und alle zugehörigen Fristen wirklich unwiderruflich löschen?')) {
         try {
