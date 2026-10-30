@@ -1,4 +1,4 @@
-/* Exakter zweizeiliger Header */
+/* Header mit zweizeiligem Layout (Mobile-First) */
 .app-header {
   background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
   color: #fff;
@@ -15,7 +15,7 @@
   margin: 0 auto;
 }
 
-/* Obere Zeile: Branding & Logout */
+/* Obere Zeile: Branding & Abmelden */
 .header-top-row {
   display: flex;
   justify-content: space-between;
@@ -88,7 +88,7 @@
   background: rgba(239, 68, 68, 0.5);
 }
 
-/* Karten & Buttons */
+/* Karten im minimalistischen Look */
 .card {
   background: var(--color-card, #1E293B);
   border: 1px solid var(--color-border, #334155);
@@ -98,6 +98,7 @@
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
 }
 
+/* Buttons */
 .btn, a.btn {
   background-color: #2563EB !important;
   color: #FFFFFF !important;
@@ -120,7 +121,54 @@
   transform: translateY(-1px);
 }
 
-/* KPI-Grid: Perfekt optimiert, damit kein Text mehr anbricht */
+/* Formulareingaben (Perfekt auf 100% Breite & ohne iOS-Verzerrungen) */
+.form-group {
+  margin-bottom: 1.15rem;
+  width: 100%;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-text-muted, #94A3B8);
+  margin-bottom: 0.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.input, select, textarea, input[type="text"], input[type="number"], input[type="date"], input[type="password"] {
+  width: 100% !important;
+  display: block !important;
+  background-color: #0b1120 !important;
+  border: 1px solid var(--color-border, #334155) !important;
+  border-radius: 14px !important;
+  padding: 0.8rem 1rem !important;
+  color: #F8FAFC !important;
+  font-size: 0.95rem !important;
+  outline: none !important;
+  -webkit-text-fill-color: #F8FAFC !important;
+  box-sizing: border-box !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input:focus, select:focus, textarea:focus, input:focus {
+  border-color: #2563EB !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2) !important;
+}
+
+/* Spezifisches Styling für Dateiuploads im Formular */
+input[type="file"] {
+  width: 100% !important;
+  background-color: #0b1120 !important;
+  border: 1px solid var(--color-border, #334155) !important;
+  border-radius: 14px !important;
+  padding: 0.6rem !important;
+  color: #F8FAFC !important;
+  font-size: 0.85rem !important;
+}
+
+/* KPI-Grid */
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -146,7 +194,7 @@
 }
 
 .kpi-label {
-  font-size: 0.5rem; /* Kompaktere Schrift, damit "In Ordnung" perfekt passt */
+  font-size: 0.5rem;
   color: var(--color-text-muted, #94A3B8);
   text-transform: uppercase;
   font-weight: 700;
