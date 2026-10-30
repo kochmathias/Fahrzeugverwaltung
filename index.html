@@ -9,21 +9,26 @@
   <meta name="theme-color" content="#2563EB">
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="css/base.css">
-  <link rel="stylesheet" href="css/components.css?v=8">
+  <link rel="stylesheet" href="css/components.css?v=9">
 </head>
 <body>
-  <!-- Header im einzeiligen Reise-App Stil -->
+  <!-- Header: Oben Titel & Logout, Unten Menüpunkte -->
   <header id="app-header" class="app-header" style="display:none;">
     <div class="header-content">
-      <div class="header-brand">
-        <img src="icons/icon-192.png" alt="Logo" class="header-logo" onerror="this.style.display='none'">
-        <span class="app-title">Fahrzeugverwaltung</span>
+      <!-- Obere Zeile: App-Titel links, Abmelden rechts -->
+      <div class="header-top-row">
+        <div class="header-brand">
+          <img src="icons/icon-192.png" alt="Logo" class="header-logo" onerror="this.this.style.display='none'">
+          <span class="app-title">Fahrzeugverwaltung</span>
+        </div>
+        <button id="btn-logout" class="nav-pill nav-pill-logout">Abmelden</button>
       </div>
+
+      <!-- Untere Zeile: Navigation / Menüpunkte direkt darunter -->
       <nav class="header-nav">
         <a href="#/dashboard" class="nav-pill active">Dashboard</a>
         <a href="#/admin" id="nav-admin" class="nav-pill" style="display: none;">Admin</a>
         <a href="#/settings" class="nav-pill">Einstellungen</a>
-        <button id="btn-logout" class="nav-pill nav-pill-logout">Abmelden</button>
       </nav>
     </div>
   </header>
@@ -32,6 +37,6 @@
     <!-- Dynamischer Inhalt -->
   </main>
 
-  <script type="module" src="js/router.js?v=8"></script>
+  <script type="module" src="js/router.js?v=9"></script>
 </body>
 </html>
