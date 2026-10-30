@@ -28,6 +28,12 @@ export async function renderVehicle(container, id) {
 
     if (monError) console.warn('Monitore konnten nicht geladen werden:', monError);
 
+    // Alle anderen Fahrzeuge des Users laden (für Vignetten-Übertragung)
+    const { data: allVehicles } = await supabase
+      .from('vehicles')
+      .select('id, bezeichnung, kennzeichen')
+      .neq('id', id);
+
     let historyMap = {};
     if (monitors && monitors.length > 0) {
       const monitorIds = monitors.map(m => m.id);
@@ -44,6 +50,10 @@ export async function renderVehicle(container, id) {
         });
       }
     }
+
+    const { data: monitorTypes } = await supabase
+      .from('monitor_types')
+      .select('*');
 
     const imgUrl = vehicle.bild_pfad 
       ? supabase.storage.from('vehicle-images').getPublicUrl(vehicle.bild_pfad).data.publicUrl 
@@ -91,16 +101,41 @@ export async function renderVehicle(container, id) {
         ` : ''}
       </div>
 
-      <!-- Fristen & Überprüfungen -->
+      <!-- Fristen & Überprüfungen Header -->
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
         <h3 style="font-size: 1.1rem; font-weight: 800; margin: 0;">Fristen & Überprüfungen</h3>
+        <button id="btn-open-custom-monitor" class="btn" style="padding: 0.4rem 0.9rem !important; font-size: 0.8rem !important;">+ Eigene Frist</button>
       </div>
 
-      <!-- Modal zum Bearbeiten / Verlängern einer Frist (inkl. Kilometerstand-Eingabe) -->
+      <!-- Modal für neue / flexible Frist anlegen -->
+      <div id="custom-monitor-card" class="card" style="display: none; border-color: var(--color-primary); margin-bottom: 1rem;">
+        <h4 style="margin: 0 0 0.8rem 0; font-size: 1rem; font-weight: 750;">Neue flexible Frist anlegen</h4>
+        <form id="custom-monitor-form">
+          <div class="form-group">
+            <label class="form-label">Bezeichnung der Frist</label>
+            <input type="text" id="custom-mon-name" class="input" placeholder="z. B. Feuerlöscherprüfung" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Ablaufdatum</label>
+            <input type="date" id="custom-mon-date" class="input" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Vorlaufzeit (Tage vor Warnung)</label>
+            <input type="number" id="custom-mon-vorlauf" class="input" value="30" required>
+          </div>
+          <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem;">
+            <button type="button" id="btn-cancel-custom" class="nav-pill" style="background: rgba(255,255,255,0.1);">Abbrechen</button>
+            <button type="submit" class="btn" style="padding: 0.5rem 1rem !important;">Frist erstellen</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Modal zum Bearbeiten / Verlängern einer Frist -->
       <div id="monitor-modal-card" class="card" style="display: none; border-color: var(--color-primary); margin-bottom: 1rem;">
-        <h4 id="monitor-modal-title" style="margin: 0 0 0.8rem 0; font-size: 1rem; font-weight: 750;">Frist bearbeiten & verlängern</h4>
+        <h4 id="monitor-modal-title" style="margin: 0 0 0.8rem 0; font-size: 1rem; font-weight: 750;">Frist verlängern</h4>
         <form id="monitor-form">
           <input type="hidden" id="edit-mon-id">
+          <input type="hidden" id="edit-mon-typename">
           <div class="form-group">
             <label class="form-label">Art der Frist</label>
             <input type="text" id="mon-type-name" class="input" readonly style="opacity: 0.7; cursor: not-allowed;">
@@ -110,7 +145,7 @@ export async function renderVehicle(container, id) {
             <input type="date" id="mon-date" class="input" required>
           </div>
           <div class="form-group">
-            <label class="form-label">Aktueller Kilometerstand (wird aktualisiert)</label>
+            <label class="form-label">Aktueller Kilometerstand</label>
             <input type="number" id="mon-km" class="input" required>
           </div>
           <div class="form-group">
@@ -121,6 +156,17 @@ export async function renderVehicle(container, id) {
             <label class="form-label">Notiz zur Verlängerung / Wartung (optional)</label>
             <input type="text" id="mon-history-notiz" class="input" placeholder="z. B. Pickerl ohne Mängel bestanden">
           </div>
+
+          <!-- Spezielle Option für Vignette: Kennzeichen-Übertragung -->
+          <div id="vignette-transfer-container" style="display: none; margin-top: 1rem; padding: 0.75rem; background: rgba(37,99,235,0.1); border-radius: 12px; border: 1px solid rgba(37,99,235,0.3);">
+            <label class="form-label" style="color: var(--color-primary);">Vignette auf anderes Fahrzeug übertragen</label>
+            <select id="target-vehicle-id" class="input">
+              <option value="">-- Nicht übertragen (nur hier verlängern) --</option>
+              ${(allVehicles || []).map(tv => `<option value="${tv.id}">${escapeHtml(tv.bezeichnung)} (${escapeHtml(tv.kennzeichen)})</option>`).join('')}
+            </select>
+            <small style="display: block; color: var(--color-text-muted); font-size: 0.75rem; margin-top: 0.3rem;">Überträgt das Ablaufdatum dieser Vignette direkt auf das gewählte Kennzeichen/Fahrzeug.</small>
+          </div>
+
           <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem;">
             <button type="button" id="btn-cancel-monitor" class="nav-pill" style="background: rgba(255,255,255,0.1);">Abbrechen</button>
             <button type="submit" class="btn" style="padding: 0.5rem 1rem !important;">Speichern & Verlängern</button>
@@ -128,7 +174,7 @@ export async function renderVehicle(container, id) {
         </form>
       </div>
 
-      <!-- Liste der Fristen mit Historien-Anzeige & Löschmöglichkeit pro Log -->
+      <!-- Liste der Fristen mit Text-Button "Verlängerung eintragen" -->
       ${(!monitors || monitors.length === 0) ? `
         <div class="card" style="text-align: center; padding: 1.5rem 1rem;">
           <p style="color: var(--color-text-muted); margin: 0; font-size: 0.85rem;">Keine Fristen konfiguriert.</p>
@@ -142,24 +188,30 @@ export async function renderVehicle(container, id) {
             if (status === 'red') { badgeBg = 'var(--color-danger)'; statusText = 'Überfällig'; }
             else if (status === 'yellow') { badgeBg = 'var(--color-warning)'; statusText = 'Bald fällig'; }
 
-            const typeName = m.monitor_types ? m.monitor_types.name : 'Überprüfung';
+            const typeName = m.monitor_types ? m.monitor_types.name : (m.custom_name || 'Überprüfung');
             const datumFormatted = m.ablaufdatum ? new Date(m.ablaufdatum).toLocaleDateString('de-AT') : 'Kein Datum gesetzt';
             const histories = historyMap[m.id] || [];
 
             return `
               <div class="card" style="margin-bottom: 0; padding: 1rem 1.25rem;">
-                <div class="monitor-item" data-id="${m.id}" data-typename="${escapeHtml(typeName)}" data-date="${m.ablaufdatum || ''}" data-vorlauf="${m.vorlauf_tage || 30}" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                   <div>
                     <h4 style="font-size: 0.95rem; font-weight: 800; margin: 0 0 0.2rem 0;">${escapeHtml(typeName)}</h4>
                     <p style="color: var(--color-text-muted); font-size: 0.8rem; margin: 0;">Gültig bis: <strong>${datumFormatted}</strong></p>
                   </div>
                   <div style="display: flex; align-items: center; gap: 0.75rem;">
                     <span style="background: ${badgeBg}; color: #fff; font-size: 0.7rem; font-weight: 700; padding: 0.25rem 0.6rem; border-radius: 9999px; text-transform: uppercase;">${statusText}</span>
-                    <span style="color: var(--color-text-muted); font-size: 0.8rem;">✏️</span>
                   </div>
                 </div>
 
-                <!-- Historie / Log mit Lösch-Button für einzelne Einträge -->
+                <!-- Text-Button statt Stift -->
+                <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--color-border);">
+                  <button type="button" class="monitor-edit-btn nav-pill" data-id="${m.id}" data-typename="${escapeHtml(typeName)}" data-date="${m.ablaufdatum || ''}" data-vorlauf="${m.vorlauf_tage || 30}" style="background: rgba(37,99,235,0.2); color: #93c5fd; font-size: 0.75rem; padding: 0.3rem 0.75rem;">
+                    + Verlängerung eintragen
+                  </button>
+                </div>
+
+                <!-- Verlauf / Historie -->
                 ${histories.length > 0 ? `
                   <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px dashed var(--color-border);">
                     <span style="font-size: 0.7rem; font-weight: 700; color: var(--color-text-muted); text-transform: uppercase; display: block; margin-bottom: 0.4rem;">Verlauf / Historie (${histories.length})</span>
@@ -185,23 +237,70 @@ export async function renderVehicle(container, id) {
       </div>
     `;
 
+    // Modal Elemente
     const modalCard = document.getElementById('monitor-modal-card');
+    const customCard = document.getElementById('custom-monitor-card');
     const editMonId = document.getElementById('edit-mon-id');
+    const editMonTypeName = document.getElementById('edit-mon-typename');
     const monTypeNameInput = document.getElementById('mon-type-name');
     const monDateInput = document.getElementById('mon-date');
     const monKmInput = document.getElementById('mon-km');
     const monVorlaufInput = document.getElementById('mon-vorlauf');
     const monHistoryNotiz = document.getElementById('mon-history-notiz');
+    const vignetteContainer = document.getElementById('vignette-transfer-container');
+    const targetVehicleSelect = document.getElementById('target-vehicle-id');
 
-    document.querySelectorAll('.monitor-item').forEach(item => {
-      item.onclick = () => {
-        editMonId.value = item.getAttribute('data-id');
-        monTypeNameInput.value = item.getAttribute('data-typename');
-        monDateInput.value = item.getAttribute('data-date');
-        monVorlaufInput.value = item.getAttribute('data-vorlauf');
+    // Eigene Frist anlegen öffnen/schließen
+    document.getElementById('btn-open-custom-monitor').onclick = () => {
+      customCard.style.display = customCard.style.display === 'none' ? 'block' : 'none';
+      modalCard.style.display = 'none';
+    };
+    document.getElementById('btn-cancel-custom').onclick = () => {
+      customCard.style.display = 'none';
+    };
+
+    // Eigene Frist abspeichern
+    document.getElementById('custom-monitor-form').onsubmit = async (e) => {
+      e.preventDefault();
+      const customName = document.getElementById('custom-mon-name').value.trim();
+      const datum = document.getElementById('custom-mon-date').value;
+      const vorlauf = parseInt(document.getElementById('custom-mon-vorlauf').value) || 30;
+
+      try {
+        const { error: insErr } = await supabase.from('monitors').insert({
+          vehicle_id: id,
+          custom_name: customName,
+          ablaufdatum: datum,
+          vorlauf_tage: vorlauf
+        });
+        if (insErr) throw insErr;
+        renderVehicle(container, id);
+      } catch (err) {
+        alert('Fehler beim Anlegen der Frist: ' + err.message);
+      }
+    };
+
+    // Klick auf "Verlängerung eintragen"
+    document.querySelectorAll('.monitor-edit-btn').forEach(btn => {
+      btn.onclick = () => {
+        const tName = btn.getAttribute('data-typename');
+        editMonId.value = btn.getAttribute('data-id');
+        editMonTypeName.value = tName;
+        monTypeNameInput.value = tName;
+        monDateInput.value = btn.getAttribute('data-date');
+        monVorlaufInput.value = btn.getAttribute('data-vorlauf');
         monKmInput.value = vehicle.km_stand || 0;
         monHistoryNotiz.value = '';
+        
+        // Wenn es sich um eine Vignette handelt, Transfer-Option anzeigen
+        if (tName.toLowerCase().includes('vignette')) {
+          vignetteContainer.style.display = 'block';
+        } else {
+          vignetteContainer.style.display = 'none';
+        }
+
         modalCard.style.display = 'block';
+        customCard.style.display = 'none';
         modalCard.scrollIntoView({ behavior: 'smooth' });
       };
     });
@@ -210,37 +309,51 @@ export async function renderVehicle(container, id) {
       modalCard.style.display = 'none';
     };
 
-    // Frist speichern, Fahrzeug-Kilometerstand aktualisieren und Historie loggen
+    // Frist speichern, Verlängerung loggen & ggf. Vignette auf anderes Fahrzeug übertragen
     document.getElementById('monitor-form').onsubmit = async (e) => {
       e.preventDefault();
       const mId = editMonId.value;
+      const tName = editMonTypeName.value;
       const neuesDatum = monDateInput.value;
       const neuerKm = parseInt(monKmInput.value) || 0;
       const vorlauf = parseInt(monVorlaufInput.value) || 30;
       const notiz = monHistoryNotiz.value.trim();
+      const targetVehId = targetVehicleSelect ? targetVehicleSelect.value : '';
 
       try {
         // 1. Kilometerstand im Fahrzeug aktualisieren
-        const { error: vehUpErr } = await supabase.from('vehicles').update({
-          km_stand: neuerKm
-        }).eq('id', id);
-        if (vehUpErr) throw vehUpErr;
+        await supabase.from('vehicles').update({ km_stand: neuerKm }).eq('id', id);
 
-        // 2. Historie-Eintrag im Backend anlegen
-        const { error: histErr } = await supabase.from('monitor_history').insert({
+        // 2. Historie-Eintrag loggen
+        await supabase.from('monitor_history').insert({
           monitor_id: mId,
           neues_ablaufdatum: neuesDatum,
           km_stand: neuerKm,
-          notiz: notiz || 'Frist verlängert / aktualisiert'
+          notiz: notiz || 'Verlängerung eingetragen'
         });
-        if (histErr) throw histErr;
 
-        // 3. Frist-Ablaufdatum aktualisieren
-        const { error: upErr } = await supabase.from('monitors').update({
+        // 3. Frist aktualisieren
+        await supabase.from('monitors').update({
           ablaufdatum: neuesDatum,
           vorlauf_tage: vorlauf
         }).eq('id', mId);
-        if (upErr) throw upErr;
+
+        // 4. Falls Vignette auf anderes Fahrzeug übertragen werden soll
+        if (targetVehId && tName.toLowerCase().includes('vignette')) {
+          // Prüfen ob das Ziel-Fahrzeug bereits einen Vignetten-Monitor hat
+          const { data: targetMon } = await supabase
+            .from('monitors')
+            .select('id')
+            .eq('vehicle_id', targetVehId)
+            .limit(1);
+
+          if (targetMon && targetMon.length > 0) {
+            await supabase.from('monitors').update({
+              ablaufdatum: neuesDatum,
+              vorlauf_tage: vorlauf
+            }).eq('id', targetMon[0].id);
+          }
+        }
 
         renderVehicle(container, id);
       } catch (err) {
@@ -248,15 +361,14 @@ export async function renderVehicle(container, id) {
       }
     };
 
-    // Einzelnen Historie-Eintrag (Log) löschen
+    // Historie-Log löschen
     document.querySelectorAll('.btn-delete-hist').forEach(btn => {
       btn.onclick = async (e) => {
         e.stopPropagation();
         if (confirm('Möchten Sie diesen Verlaufseintrag wirklich löschen?')) {
           const histId = btn.getAttribute('data-histid');
           try {
-            const { error: delHistErr } = await supabase.from('monitor_history').delete().eq('id', histId);
-            if (delHistErr) throw delHistErr;
+            await supabase.from('monitor_history').delete().eq('id', histId);
             renderVehicle(container, id);
           } catch (err) {
             alert('Fehler beim Löschen des Logs: ' + err.message);
