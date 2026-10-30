@@ -27,17 +27,18 @@ async function router() {
     navAdmin.style.display = user?.profile?.rolle === 'admin' ? 'inline-block' : 'none';
   }
 
-  // Active-State bei Nav-Pills aktualisieren
+  // Active-State der Navigations-Pills aktualisieren
   document.querySelectorAll('.nav-pill').forEach(pill => {
-    if (pill.getAttribute('href') === hash) {
+    const href = pill.getAttribute('href');
+    if (href === hash || (hash.startsWith('#/vehicle') && href === '#/dashboard')) {
       pill.classList.add('active');
     } else {
       pill.classList.remove('active');
     }
   });
 
-  // Routen-Zuordnung
-  if (hash === '#/dashboard') {
+  // Exakte Routen-Auswertung
+  if (hash === '#/dashboard' || hash === '') {
     renderDashboard(container);
   } else if (hash === '#/vehicle/new') {
     renderVehicleForm(container, null);
