@@ -2,8 +2,8 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Fahrzeugverwaltung Österreich</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Fahrzeugverwaltung</title>
   <link rel="icon" href="icons/favicon-32.png" type="image/png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="theme-color" content="#2563EB">
@@ -13,21 +13,26 @@
   <link rel="stylesheet" href="css/components.css">
 </head>
 <body>
-  <header id="app-header" style="display:none; padding: 1rem; background: var(--color-card); border-bottom: 1px solid var(--color-border); justify-content: space-between; align-items: center;">
-    <div style="display: flex; align-items: center; gap: 0.75rem;">
-      <img src="icons/icon-192.png" alt="Logo" style="width: 32px; height: 32px; border-radius: 8px;" onerror="this.style.display='none'">
-      <span style="font-weight: 700;">Kfz AT</span>
+  <!-- Moderner kompakter Header wie in der Referenz -->
+  <header id="app-header" class="app-header" style="display:none;">
+    <div class="header-content">
+      <div class="header-brand">
+        <img src="icons/icon-192.png" alt="Logo" class="header-logo" onerror="this.style.display='none'">
+        <div class="header-title-wrapper">
+          <span class="app-title">Fahrzeugverwaltung</span>
+        </div>
+      </div>
+      <nav class="header-nav">
+        <a href="#/dashboard" class="nav-pill active">Dashboard</a>
+        <a href="#/admin" id="nav-admin" class="nav-pill" style="display: none;">Admin</a>
+        <a href="#/settings" class="nav-pill">Einstellungen</a>
+        <button id="btn-logout" class="nav-pill nav-pill-logout">Abmelden</button>
+      </nav>
     </div>
-    <nav style="display: flex; gap: 1rem; align-items: center;">
-      <a href="#/dashboard" style="color: var(--color-text); text-decoration: none;">Dashboard</a>
-      <a href="#/admin" id="nav-admin" style="color: var(--color-text); text-decoration: none; display: none;">Admin</a>
-      <a href="#/settings" style="color: var(--color-text); text-decoration: none;">Einstellungen</a>
-      <button id="btn-logout" style="color: var(--color-danger); background: none; border: none; cursor: pointer; font: inherit;">Abmelden</button>
-    </nav>
   </header>
 
-  <main id="app-content" style="flex: 1; padding: 1.5rem; max-width: 1200px; margin: 0 auto; width: 100%;">
-    <!-- Dynamischer View-Inhalt -->
+  <main id="app-content" class="app-main">
+    <!-- Dynamischer Inhalt -->
   </main>
 
   <script type="module" src="js/router.js"></script>
