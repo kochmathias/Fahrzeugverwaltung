@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="css/components.css">
 </head>
 <body>
-  <!-- Moderner kompakter Header wie in der Referenz -->
+  <!-- Header über volle Bildschirmbreite -->
   <header id="app-header" class="app-header" style="display:none;">
     <div class="header-content">
       <div class="header-brand">
@@ -26,7 +26,7 @@
         <a href="#/dashboard" class="nav-pill active">Dashboard</a>
         <a href="#/admin" id="nav-admin" class="nav-pill" style="display: none;">Admin</a>
         <a href="#/settings" class="nav-pill">Einstellungen</a>
-        <button id="btn-logout" class="nav-pill nav-pill-logout">Abmelden</button>
+        <button id="btn-logout" class="nav-pill nav-pill-logout" onclick="import('./js/auth.js').then(m => m.logoutUser().catch(() => window.location.reload()))">Abmelden</button>
       </nav>
     </div>
   </header>
