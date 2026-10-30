@@ -28,6 +28,24 @@ export async function renderVehicle(container, id) {
 
     if (monError) console.warn('Monitore konnten nicht geladen werden:', monError);
 
+    // Historie für alle Monitore dieses Fahrzeugs laden
+    let historyMap = {};
+    if (monitors && monitors.length > 0) {
+      const monitorIds = monitors.map(m => m.id);
+      const { data: histData } = await supabase
+        .from('monitor_history')
+        .select('*')
+        .in('monitor_id', monitorIds)
+        .order('erledigt_am', { ascending: false });
+
+      if (histData) {
+        histData.forEach(h => {
+          if (!historyMap[h.monitor_id]) historyMap[h.monitor_id] = [];
+          historyMap[h.monitor_id].push(h);
+        });
+      }
+    }
+
     const { data: monitorTypes } = await supabase
       .from('monitor_types')
       .select('*');
@@ -111,13 +129,13 @@ export async function renderVehicle(container, id) {
         </form>
       </div>
 
-      <!-- Liste der Fristen (klickbar zum Eintragen oder Verlängern) -->
+      <!-- Liste der Fristen mit Historien-Anzeige -->
       ${(!monitors || monitors.length === 0) ? `
         <div class="card" style="text-align: center; padding: 1.5rem 1rem;">
           <p style="color: var(--color-text-muted); margin: 0; font-size: 0.85rem;">Keine Fristen konfiguriert.</p>
         </div>
       ` : `
-        <div style="display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1.5rem;">
+        <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem;">
           ${monitors.map(m => {
             const status = berechneAmpel(m.ablaufdatum, m.vorlauf_tage, vehicle.km_stand, m.naechste_faellig_km);
             let badgeBg = 'var(--color-success)';
@@ -127,17 +145,35 @@ export async function renderVehicle(container, id) {
 
             const typeName = m.monitor_types ? m.monitor_types.name : 'Überprüfung';
             const datumFormatted = m.ablaufdatum ? new Date(m.ablaufdatum).toLocaleDateString('de-AT') : 'Kein Datum gesetzt';
+            const histories = historyMap[m.id] || [];
 
             return `
-              <div class="card monitor-item" data-id="${m.id}" data-typename="${escapeHtml(typeName)}" data-date="${m.ablaufdatum || ''}" data-vorlauf="${m.vorlauf_tage || 30}" style="cursor: pointer; margin-bottom: 0; display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem;">
-                <div>
-                  <h4 style="font-size: 0.95rem; font-weight: 800; margin: 0 0 0.2rem 0;">${escapeHtml(typeName)}</h4>
-                  <p style="color: var(--color-text-muted); font-size: 0.8rem; margin: 0;">Gültig bis: <strong>${datumFormatted}</strong></p>
+              <div class="card" style="margin-bottom: 0; padding: 1rem 1.25rem;">
+                <div class="monitor-item" data-id="${m.id}" data-typename="${escapeHtml(typeName)}" data-date="${m.ablaufdatum || ''}" data-vorlauf="${m.vorlauf_tage || 30}" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                  <div>
+                    <h4 style="font-size: 0.95rem; font-weight: 800; margin: 0 0 0.2rem 0;">${escapeHtml(typeName)}</h4>
+                    <p style="color: var(--color-text-muted); font-size: 0.8rem; margin: 0;">Gültig bis: <strong>${datumFormatted}</strong></p>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <span style="background: ${badgeBg}; color: #fff; font-size: 0.7rem; font-weight: 700; padding: 0.25rem 0.6rem; border-radius: 9999px; text-transform: uppercase;">${statusText}</span>
+                    <span style="color: var(--color-text-muted); font-size: 0.8rem;">✏️</span>
+                  </div>
                 </div>
-                <div style="display: flex; align-items: center; gap: 0.75rem;">
-                  <span style="background: ${badgeBg}; color: #fff; font-size: 0.7rem; font-weight: 700; padding: 0.25rem 0.6rem; border-radius: 9999px; text-transform: uppercase;">${statusText}</span>
-                  <span style="color: var(--color-text-muted); font-size: 0.8rem;">✏️</span>
-                </div>
+
+                <!-- Historie / Log für diesen Monitor anzeigen, falls vorhanden -->
+                ${histories.length > 0 ? `
+                  <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px dashed var(--color-border);">
+                    <span style="font-size: 0.7rem; font-weight: 700; color: var(--color-text-muted); text-transform: uppercase; display: block; margin-bottom: 0.4rem;">Verlauf / Historie (${histories.length})</span>
+                    <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                      ${histories.map(h => `
+                        <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--color-text-muted);">
+                          <span>📅 Neu bis: <strong>${new Date(h.neues_ablaufdatum).toLocaleDateString('de-AT')}</strong> (${escapeHtml(h.notiz || 'Verlängert')})</span>
+                          <span>${h.km_stand ? h.km_stand.toLocaleString('de-AT') + ' km' : ''}</span>
+                        </div>
+                      `).join('')}
+                    </div>
+                  </div>
+                ` : ''}
               </div>
             `;
           }).join('')}
@@ -157,7 +193,6 @@ export async function renderVehicle(container, id) {
     const monVorlaufInput = document.getElementById('mon-vorlauf');
     const monHistoryNotiz = document.getElementById('mon-history-notiz');
 
-    // Klick auf eine Frist öffnet das Bearbeitungs- und Verlängerungsfenster
     document.querySelectorAll('.monitor-item').forEach(item => {
       item.onclick = () => {
         editMonId.value = item.getAttribute('data-id');
@@ -174,7 +209,6 @@ export async function renderVehicle(container, id) {
       modalCard.style.display = 'none';
     };
 
-    // Frist speichern / verlängern und in Historie schreiben
     document.getElementById('monitor-form').onsubmit = async (e) => {
       e.preventDefault();
       const mId = editMonId.value;
@@ -183,18 +217,15 @@ export async function renderVehicle(container, id) {
       const notiz = monHistoryNotiz.value.trim();
 
       try {
-        // 1. Historie-Eintrag anlegen, wenn bereits ein altes Datum existierte
-        const aktMonitor = monitors.find(m => m.id === mId);
-        if (aktMonitor && aktMonitor.ablaufdatum) {
-          await supabase.from('monitor_history').insert({
-            monitor_id: mId,
-            neues_ablaufdatum: neuesDatum,
-            km_stand: vehicle.km_stand,
-            notiz: notiz || 'Frist verlängert'
-          });
-        }
+        // Historie im Backend abspeichern
+        await supabase.from('monitor_history').insert({
+          monitor_id: mId,
+          neues_ablaufdatum: neuesDatum,
+          km_stand: vehicle.km_stand,
+          notiz: notiz || 'Frist verlängert / aktualisiert'
+        });
 
-        // 2. Frist aktualisieren
+        // Aktuelle Frist aktualisieren
         const { error: upErr } = await supabase.from('monitors').update({
           ablaufdatum: neuesDatum,
           vorlauf_tage: vorlauf
@@ -207,7 +238,6 @@ export async function renderVehicle(container, id) {
       }
     };
 
-    // Fahrzeug löschen
     document.getElementById('btn-delete-vehicle').onclick = async () => {
       if (confirm('Möchten Sie dieses Fahrzeug und alle zugehörigen Fristen wirklich unwiderruflich löschen?')) {
         try {
