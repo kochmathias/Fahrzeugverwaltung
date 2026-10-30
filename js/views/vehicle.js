@@ -28,7 +28,6 @@ export async function renderVehicle(container, id) {
 
     if (monError) console.warn('Monitore konnten nicht geladen werden:', monError);
 
-    // Historie für alle Monitore dieses Fahrzeugs laden
     let historyMap = {};
     if (monitors && monitors.length > 0) {
       const monitorIds = monitors.map(m => m.id);
@@ -45,10 +44,6 @@ export async function renderVehicle(container, id) {
         });
       }
     }
-
-    const { data: monitorTypes } = await supabase
-      .from('monitor_types')
-      .select('*');
 
     const imgUrl = vehicle.bild_pfad 
       ? supabase.storage.from('vehicle-images').getPublicUrl(vehicle.bild_pfad).data.publicUrl 
@@ -71,7 +66,7 @@ export async function renderVehicle(container, id) {
         <div style="flex-grow: 1; min-width: 0;">
           <h2 style="font-size: 1.25rem; font-weight: 800; margin: 0 0 0.2rem 0;">${escapeHtml(vehicle.bezeichnung)}</h2>
           <p style="color: var(--color-primary); font-weight: 700; font-size: 0.95rem; margin: 0 0 0.3rem 0;">${escapeHtml(vehicle.kennzeichen)}</p>
-          <p style="color: var(--color-text-muted); font-size: 0.8rem; margin: 0;">${escapeHtml(vehicle.marke || '')} ${escapeHtml(vehicle.modell || '')} · ${(vehicle.km_stand || 0).toLocaleString('de-AT')} km</p>
+          <p style="color: var(--color-text-muted); font-size: 0.8rem; margin: 0;">${escapeHtml(vehicle.marke || '')} ${escapeHtml(vehicle.modell || '')} · <strong style="color: #F8FAFC;">${(vehicle.km_stand || 0).toLocaleString('de-AT')} km</strong></p>
         </div>
       </div>
 
@@ -101,7 +96,7 @@ export async function renderVehicle(container, id) {
         <h3 style="font-size: 1.1rem; font-weight: 800; margin: 0;">Fristen & Überprüfungen</h3>
       </div>
 
-      <!-- Modal zum Bearbeiten / Verlängern einer Frist -->
+      <!-- Modal zum Bearbeiten / Verlängern einer Frist (inkl. Kilometerstand-Eingabe) -->
       <div id="monitor-modal-card" class="card" style="display: none; border-color: var(--color-primary); margin-bottom: 1rem;">
         <h4 id="monitor-modal-title" style="margin: 0 0 0.8rem 0; font-size: 1rem; font-weight: 750;">Frist bearbeiten & verlängern</h4>
         <form id="monitor-form">
@@ -113,6 +108,10 @@ export async function renderVehicle(container, id) {
           <div class="form-group">
             <label class="form-label">Neues Ablaufdatum</label>
             <input type="date" id="mon-date" class="input" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Aktueller Kilometerstand (wird aktualisiert)</label>
+            <input type="number" id="mon-km" class="input" required>
           </div>
           <div class="form-group">
             <label class="form-label">Vorlaufzeit (Tage vor Warnung)</label>
@@ -129,7 +128,7 @@ export async function renderVehicle(container, id) {
         </form>
       </div>
 
-      <!-- Liste der Fristen mit Historien-Anzeige -->
+      <!-- Liste der Fristen mit Historien-Anzeige & Löschmöglichkeit pro Log -->
       ${(!monitors || monitors.length === 0) ? `
         <div class="card" style="text-align: center; padding: 1.5rem 1rem;">
           <p style="color: var(--color-text-muted); margin: 0; font-size: 0.85rem;">Keine Fristen konfiguriert.</p>
@@ -160,15 +159,15 @@ export async function renderVehicle(container, id) {
                   </div>
                 </div>
 
-                <!-- Historie / Log für diesen Monitor anzeigen, falls vorhanden -->
+                <!-- Historie / Log mit Lösch-Button für einzelne Einträge -->
                 ${histories.length > 0 ? `
                   <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px dashed var(--color-border);">
                     <span style="font-size: 0.7rem; font-weight: 700; color: var(--color-text-muted); text-transform: uppercase; display: block; margin-bottom: 0.4rem;">Verlauf / Historie (${histories.length})</span>
-                    <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                    <div style="display: flex; flex-direction: column; gap: 0.4rem;">
                       ${histories.map(h => `
-                        <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--color-text-muted);">
-                          <span>📅 Neu bis: <strong>${new Date(h.neues_ablaufdatum).toLocaleDateString('de-AT')}</strong> (${escapeHtml(h.notiz || 'Verlängert')})</span>
-                          <span>${h.km_stand ? h.km_stand.toLocaleString('de-AT') + ' km' : ''}</span>
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; color: var(--color-text-muted); background: rgba(255,255,255,0.03); padding: 0.3rem 0.5rem; border-radius: 8px;">
+                          <span>📅 Neu bis: <strong>${new Date(h.neues_ablaufdatum).toLocaleDateString('de-AT')}</strong> (${escapeHtml(h.notiz || 'Verlängert')}) · ${h.km_stand ? h.km_stand.toLocaleString('de-AT') + ' km' : ''}</span>
+                          <button type="button" class="btn-delete-hist" data-histid="${h.id}" style="background: transparent; border: none; color: var(--color-danger); cursor: pointer; font-size: 0.9rem; font-weight: 700; padding: 0 0.2rem;" title="Logeintrag löschen">×</button>
                         </div>
                       `).join('')}
                     </div>
@@ -190,6 +189,7 @@ export async function renderVehicle(container, id) {
     const editMonId = document.getElementById('edit-mon-id');
     const monTypeNameInput = document.getElementById('mon-type-name');
     const monDateInput = document.getElementById('mon-date');
+    const monKmInput = document.getElementById('mon-km');
     const monVorlaufInput = document.getElementById('mon-vorlauf');
     const monHistoryNotiz = document.getElementById('mon-history-notiz');
 
@@ -199,6 +199,7 @@ export async function renderVehicle(container, id) {
         monTypeNameInput.value = item.getAttribute('data-typename');
         monDateInput.value = item.getAttribute('data-date');
         monVorlaufInput.value = item.getAttribute('data-vorlauf');
+        monKmInput.value = vehicle.km_stand || 0;
         monHistoryNotiz.value = '';
         modalCard.style.display = 'block';
         modalCard.scrollIntoView({ behavior: 'smooth' });
@@ -209,34 +210,60 @@ export async function renderVehicle(container, id) {
       modalCard.style.display = 'none';
     };
 
+    // Frist speichern, Fahrzeug-Kilometerstand aktualisieren und Historie loggen
     document.getElementById('monitor-form').onsubmit = async (e) => {
       e.preventDefault();
       const mId = editMonId.value;
       const neuesDatum = monDateInput.value;
+      const neuerKm = parseInt(monKmInput.value) || 0;
       const vorlauf = parseInt(monVorlaufInput.value) || 30;
       const notiz = monHistoryNotiz.value.trim();
 
       try {
-        // Historie im Backend abspeichern
-        await supabase.from('monitor_history').insert({
+        // 1. Kilometerstand im Fahrzeug aktualisieren
+        const { error: vehUpErr } = await supabase.from('vehicles').update({
+          km_stand: neuerKm
+        }).eq('id', id);
+        if (vehUpErr) throw vehUpErr;
+
+        // 2. Historie-Eintrag im Backend anlegen
+        const { error: histErr } = await supabase.from('monitor_history').insert({
           monitor_id: mId,
           neues_ablaufdatum: neuesDatum,
-          km_stand: vehicle.km_stand,
+          km_stand: neuerKm,
           notiz: notiz || 'Frist verlängert / aktualisiert'
         });
+        if (histErr) throw histErr;
 
-        // Aktuelle Frist aktualisieren
+        // 3. Frist-Ablaufdatum aktualisieren
         const { error: upErr } = await supabase.from('monitors').update({
           ablaufdatum: neuesDatum,
           vorlauf_tage: vorlauf
         }).eq('id', mId);
-
         if (upErr) throw upErr;
+
         renderVehicle(container, id);
       } catch (err) {
-        alert('Fehler beim Speichern der Frist: ' + err.message);
+        alert('Fehler beim Speichern: ' + err.message);
       }
     };
+
+    // Einzelnen Historie-Eintrag (Log) löschen
+    document.querySelectorAll('.btn-delete-hist').forEach(btn => {
+      btn.onclick = async (e) => {
+        e.stopPropagation();
+        if (confirm('Möchten Sie diesen Verlaufseintrag wirklich löschen?')) {
+          const histId = btn.getAttribute('data-histid');
+          try {
+            const { error: delHistErr } = await supabase.from('monitor_history').delete().eq('id', histId);
+            if (delHistErr) throw delHistErr;
+            renderVehicle(container, id);
+          } catch (err) {
+            alert('Fehler beim Löschen des Logs: ' + err.message);
+          }
+        }
+      };
+    });
 
     document.getElementById('btn-delete-vehicle').onclick = async () => {
       if (confirm('Möchten Sie dieses Fahrzeug und alle zugehörigen Fristen wirklich unwiderruflich löschen?')) {
