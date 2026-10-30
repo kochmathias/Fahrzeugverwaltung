@@ -1,4 +1,4 @@
-import { getCurrentUser } from './auth.js';
+import { getCurrentUser, logoutUser } from './auth.js';
 import { renderLogin } from './views/login.js';
 import { renderDashboard } from './views/dashboard.js';
 import { renderVehicle } from './views/vehicle.js';
@@ -22,12 +22,25 @@ async function router() {
   
   if (header) header.style.display = 'block';
   
+  // Logout Event Handler verknüpfen
+  const logoutBtn = document.getElementById('btn-logout');
+  if (logoutBtn) {
+    logoutBtn.onclick = async (e) => {
+      e.preventDefault();
+      try {
+        await logoutUser();
+      } catch (err) {
+        console.error('Logout Fehler:', err);
+      }
+    };
+  }
+  
   const navAdmin = document.getElementById('nav-admin');
   if (navAdmin) {
     navAdmin.style.display = user?.profile?.rolle === 'admin' ? 'inline-block' : 'none';
   }
 
-  // Active-State der Navigations-Pills aktualisieren
+  // Active-State aktualisieren
   document.querySelectorAll('.nav-pill').forEach(pill => {
     const href = pill.getAttribute('href');
     if (href === hash || (hash.startsWith('#/vehicle') && href === '#/dashboard')) {
@@ -37,7 +50,7 @@ async function router() {
     }
   });
 
-  // Exakte Routen-Auswertung
+  // Routen
   if (hash === '#/dashboard' || hash === '') {
     renderDashboard(container);
   } else if (hash === '#/vehicle/new') {
